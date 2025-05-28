@@ -1,19 +1,38 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ArticleList() {
   const [articles, setArticles] = useState([]);
-  // Fetch all articles when component mounts
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchArticles();
   }, []);
 
   const fetchArticles = async () => {
-    // Fetch articles from the API
+    try {
+      const response = await fetch('/api/articles');
+      if (!response.ok) throw new Error('Failed to fetch articles');
+      const data = await response.json();
+      setArticles(data);
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   const deleteArticle = async (id) => {
-    // Delete an article by ID
+    if (!window.confirm('Are you sure you want to delete this article?')) return;
+
+    try {
+      const response = await fetch(`/api/articles/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete article');
+      alert('Article deleted successfully');
+      fetchArticles(); // Refresh list after deletion
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -26,17 +45,14 @@ export default function ArticleList() {
 
       <h2>Articles</h2>
       <ul>
+        {articles.length === 0 && <li>No articles available.</li>}
         {articles.map(article => (
-          <li key={article.id}>
+          <li key={article.id} style={{ marginBottom: '15px' }}>
             <strong>{article.title}</strong> <br />
             <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
-            <button onClick={() => deleteArticle(article.id)}>Delete</button>
-            <button onClick={() => {
-              // Navigate to update article form with article ID /articles/update/${article.id}
-            }}>Update</button>
-            <button onClick={() => {
-              // Navigate to view article details with article ID /articles/${article.id}
-            }}>View</button>
+            <button onClick={() => deleteArticle(article.id)}>Delete</button>{' '}
+            <button onClick={() => navigate(`/articles/update/${article.id}`)}>Update</button>{' '}
+            <button onClick={() => navigate(`/articles/${article.id}`)}>View</button>
           </li>
         ))}
       </ul>

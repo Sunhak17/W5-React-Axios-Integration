@@ -9,14 +9,36 @@ export default function ArticleForm() {
     categoryId: '',
   });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+    if (!form.title.trim() || !form.content.trim() || !form.journalistId.trim() || !form.categoryId.trim()) {
+      alert("All fields are required.");
+      return;
+    }
+
+    // Optionally, validate numeric fields if needed
+    if (isNaN(Number(form.journalistId)) || isNaN(Number(form.categoryId))) {
+      alert("Journalist ID and Category ID must be numbers.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add article');
+      }
+      alert("Article added successfully!");
+      setForm({ title: '', content: '', journalistId: '', categoryId: '' }); // reset form
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Validate form data
-  };
 
   return (
 
