@@ -1,52 +1,92 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function ArticleFilterByCategory() {
   const [articles, setArticles] = useState([]);
-  // Fetch all articles when component mounts
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  // Fetch all articles and categories on mount
   useEffect(() => {
+    fetchCategories();
     fetchArticles();
   }, []);
 
-  const fetchArticles = async () => {
-    // Fetch articles from the API
+  // Fetch all articles or filtered articles if category selected
+  const fetchArticles = async (categoryId = '') => {
+    try {
+      let url = 'http://localhost:5000/articles';
+      if (categoryId) {
+        // Assuming your API supports query param ?categoryId=...
+        url += `?categoryId=${categoryId}`;
+      }
+      const res = await axios.get(url);
+      setArticles(res.data);
+    } catch (err) {
+      console.error('Failed to fetch articles:', err);
+    }
   };
 
+  // Fetch categories
   const fetchCategories = async () => {
-    // Fetch categories from the API
-  }
+    try {
+      const res = await axios.get('http://localhost:5000/categories');
+      setCategories(res.data);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
+
+  // Handle filter apply
+  const applyFilters = () => {
+    fetchArticles(selectedCategory);
+  };
+
+  // Reset filters to show all articles
+  const resetFilters = () => {
+    setSelectedCategory('');
+    fetchArticles();
+  };
 
   return (
     <div>
       <h2>Articles</h2>
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
         <label htmlFor="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter">
+        <select
+          id="categoryFilter"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
           <option value="">All Categories</option>
-          {/* Options for categories */}
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
         </select>
 
-        <button
-          onClick={() => {
-            // Logic to apply filters
-          }}
-        >Apply Filters</button>
-        <button
-          onClick={() => {
-            // Logic to reset filters
-          }}
-        >Reset Filters</button>
+        <button onClick={applyFilters}>Apply Filters</button>
+        <button onClick={resetFilters}>Reset Filters</button>
       </div>
 
       <ul>
-        {articles.map(article => (
-          <li key={article.id}>
-            <strong>{article.title}</strong> <br />
-            <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
-            <button disabled>Delete</button>
-            <button disabled>Update</button>
-            <button disabled>View</button>
-          </li>
-        ))}
+        {articles.length === 0 ? (
+          <li>No articles found.</li>
+        ) : (
+          articles.map((article) => (
+            <li key={article.id}>
+              <strong>{article.title}</strong> <br />
+              <small>
+                By Journalist #{article.journalistId} | Category #{article.categoryId}
+              </small>
+              <br />
+              <button disabled>Delete</button>
+              <button disabled>Update</button>
+              <button disabled>View</button>
+            </li>
+          ))
+        )}
       </ul>
     </div>
   );
