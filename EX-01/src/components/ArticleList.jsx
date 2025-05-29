@@ -1,58 +1,68 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 
 export default function ArticleList() {
   const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Fetch all articles when component mounts
   useEffect(() => {
     fetchArticles();
   }, []);
 
   const fetchArticles = async () => {
     try {
-      const response = await fetch('/api/articles');
-      if (!response.ok) throw new Error('Failed to fetch articles');
-      const data = await response.json();
-      setArticles(data);
-    } catch (error) {
-      alert(error.message);
+      const res = await axios.get("http://localhost:5000/articles");
+      // Ensure the response is always an array
+      setArticles(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Error fetching articles:", err);
+      setArticles([]); // fallback to empty array on error
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteArticle = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this article?')) return;
-
     try {
-      const response = await fetch(`/api/articles/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete article');
-      alert('Article deleted successfully');
-      fetchArticles(); // Refresh list after deletion
-    } catch (error) {
-      alert(error.message);
+      await axios.delete(`http://localhost:5000/articles/${id}`);
+      setArticles(articles.filter((article) => article.id !== id));
+    } catch (err) {
+      console.error("Error deleting article:", err);
     }
   };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div>
       {/* Navigation Links */}
-      <nav style={{ marginBottom: '20px' }}>
-        <Link to="/" style={{ marginRight: '10px' }}>📄 View Articles</Link>
+      <nav style={{ marginBottom: "20px" }}>
+        <Link to="/" style={{ marginRight: "10px" }}>
+          📄 View Articles
+        </Link>
         <Link to="/add"> ➕ Add Article</Link>
       </nav>
 
       <h2>Articles</h2>
       <ul>
-        {articles.length === 0 && <li>No articles available.</li>}
-        {articles.map(article => (
-          <li key={article.id} style={{ marginBottom: '15px' }}>
+        {articles.map((article) => (
+          <li key={article.id}>
             <strong>{article.title}</strong> <br />
-            <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
-            <button onClick={() => deleteArticle(article.id)}>Delete</button>{' '}
-            <button onClick={() => navigate(`/articles/update/${article.id}`)}>Update</button>{' '}
-            <button onClick={() => navigate(`/articles/${article.id}`)}>View</button>
+            <small>
+              By Journalist #{article.journalistId} | Category #
+              {article.categoryId}
+            </small>
+            <br />
+            <button onClick={() => deleteArticle(article.id)}>Delete</button>
+            <button onClick={() => navigate(`/update/${article.id}`)}>
+              Update
+            </button>
+            <button onClick={() => navigate(`/articles/${article.id}`)}>
+              View
+            </button>
           </li>
         ))}
       </ul>

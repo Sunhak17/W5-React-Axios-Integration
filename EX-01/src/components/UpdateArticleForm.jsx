@@ -1,41 +1,38 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 
 export default function UpdateArticleForm() {
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+    journalistId: "",
+    categoryId: "",
+  });
+  const [loading, setLoading] = useState(true);
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    journalistId: '',
-    categoryId: '',
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
+  // Fetch to prefill a form and update an existing article
   useEffect(() => {
-    // Fetch existing article to prefill form
     const fetchArticle = async () => {
       try {
-        const response = await axios.get(`/api/articles/${id}`);
+        const res = await axios.get(`http://localhost:5000/articles/${id}`);
         setForm({
-          title: response.data.title,
-          content: response.data.content,
-          journalistId: response.data.journalistId,
-          categoryId: response.data.categoryId,
+          title: res.data.title || "",
+          content: res.data.content || "",
+          journalistId: res.data.journalistId || "",
+          categoryId: res.data.categoryId || "",
         });
       } catch (err) {
-        setError('Failed to fetch article data');
+        alert("Error fetching article.");
+        navigate("/");
       } finally {
         setLoading(false);
       }
     };
-
     fetchArticle();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,51 +40,62 @@ export default function UpdateArticleForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      await axios.put(`/api/articles/${id}`, form);
-      alert('Article updated successfully');
-      navigate('/'); // Redirect back to articles list or wherever you want
+      await axios.put(`http://localhost:5000/articles/${id}`, form);
+      navigate("/");
     } catch (err) {
-      alert('Failed to update article');
+      alert("Error updating article.");
+      console.error(err);
     }
   };
 
-  if (loading) return <div>Loading article data...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) return <div>Loading...</div>;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Update Article</h3>
-      <input
-        name="title"
-        value={form.title}
-        onChange={handleChange}
-        placeholder="Title"
-        required
-      /><br />
-      <textarea
-        name="content"
-        value={form.content}
-        onChange={handleChange}
-        placeholder="Content"
-        required
-      /><br />
-      <input
-        name="journalistId"
-        value={form.journalistId}
-        onChange={handleChange}
-        placeholder="Journalist ID"
-        required
-      /><br />
-      <input
-        name="categoryId"
-        value={form.categoryId}
-        onChange={handleChange}
-        placeholder="Category ID"
-        required
-      /><br />
-      <button type="submit">Update</button>
-    </form>
+    <div>
+      {/* Navigation Links */}
+      <nav style={{ marginBottom: "20px" }}>
+        <Link to="/" style={{ marginRight: "10px" }}>
+          📄 View Articles
+        </Link>
+        <Link to="/add"> ➕ Add Article</Link>
+      </nav>
+      <form onSubmit={handleSubmit}>
+        <h3>Update Article</h3>
+        <input
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          placeholder="Title"
+          required
+        />
+        <br />
+        <textarea
+          name="content"
+          value={form.content}
+          onChange={handleChange}
+          placeholder="Content"
+          required
+        />
+        <br />
+        <input
+          name="journalistId"
+          value={form.journalistId}
+          onChange={handleChange}
+          placeholder="Journalist ID"
+          required
+        />
+        <br />
+        <input
+          name="categoryId"
+          value={form.categoryId}
+          onChange={handleChange}
+          placeholder="Category ID"
+          required
+        />
+        <br />
+        <button type="submit">Update</button>
+      </form>
+    </div>
   );
 }

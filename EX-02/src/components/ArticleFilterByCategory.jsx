@@ -1,57 +1,61 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function ArticleFilterByCategory() {
   const [articles, setArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-  // Fetch all articles and categories on mount
+  // Fetch all articles and categories when component mounts
   useEffect(() => {
-    fetchCategories();
     fetchArticles();
+    fetchCategories();
   }, []);
 
-  // Fetch all articles or filtered articles if category selected
-  const fetchArticles = async (categoryId = '') => {
+  const fetchArticles = async () => {
     try {
-      let url = 'http://localhost:5000/articles';
-      if (categoryId) {
-        // Assuming your API supports query param ?categoryId=...
-        url += `?categoryId=${categoryId}`;
-      }
-      const res = await axios.get(url);
+      const res = await axios.get("http://localhost:5000/articles");
       setArticles(res.data);
+      setAllArticles(res.data);
     } catch (err) {
-      console.error('Failed to fetch articles:', err);
+      setArticles([]);
+      setAllArticles([]);
+      console.error("Error fetching articles:", err);
     }
   };
 
-  // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/categories');
+      const res = await axios.get("http://localhost:5000/categories");
       setCategories(res.data);
     } catch (err) {
-      console.error('Failed to fetch categories:', err);
+      setCategories([]);
+      console.error("Error fetching categories:", err);
     }
   };
 
-  // Handle filter apply
-  const applyFilters = () => {
-    fetchArticles(selectedCategory);
+  const handleApplyFilters = () => {
+    if (selectedCategory) {
+      setArticles(
+        allArticles.filter(
+          (article) => String(article.categoryId) === selectedCategory
+        )
+      );
+    } else {
+      setArticles(allArticles);
+    }
   };
 
-  // Reset filters to show all articles
-  const resetFilters = () => {
-    setSelectedCategory('');
-    fetchArticles();
+  const handleResetFilters = () => {
+    setSelectedCategory("");
+    setArticles(allArticles);
   };
 
   return (
     <div>
       <h2>Articles</h2>
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
         <label htmlFor="categoryFilter">Filter by Category:</label>
         <select
           id="categoryFilter"
@@ -66,27 +70,24 @@ export default function ArticleFilterByCategory() {
           ))}
         </select>
 
-        <button onClick={applyFilters}>Apply Filters</button>
-        <button onClick={resetFilters}>Reset Filters</button>
+        <button onClick={handleApplyFilters}>Apply Filters</button>
+        <button onClick={handleResetFilters}>Reset Filters</button>
       </div>
 
       <ul>
-        {articles.length === 0 ? (
-          <li>No articles found.</li>
-        ) : (
-          articles.map((article) => (
-            <li key={article.id}>
-              <strong>{article.title}</strong> <br />
-              <small>
-                By Journalist #{article.journalistId} | Category #{article.categoryId}
-              </small>
-              <br />
-              <button disabled>Delete</button>
-              <button disabled>Update</button>
-              <button disabled>View</button>
-            </li>
-          ))
-        )}
+        {articles.map((article) => (
+          <li key={article.id}>
+            <strong>{article.title}</strong> <br />
+            <small>
+              By Journalist #{article.journalistId} | Category #
+              {article.categoryId}
+            </small>
+            <br />
+            <button disabled>Delete</button>
+            <button disabled>Update</button>
+            <button disabled>View</button>
+          </li>
+        ))}
       </ul>
     </div>
   );
